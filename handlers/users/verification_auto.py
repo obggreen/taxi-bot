@@ -1,17 +1,19 @@
 import base64
+import types
 
 from aiogram import F, Bot
 from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaPhoto
+from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaPhoto, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database.models import User
-from database.models.users import DocumentType
+from database.models.users import DocumentType, VerifType
 from gpt import get_response_gpt, check_auto_number
 from handlers.routers import user_router
 from handlers.users.base import SelectVerificationType
+from helpers.functions import create_payment_link
 from helpers.keyboards.markups import custom_back_button, custom_back_markup
 
 
@@ -322,7 +324,7 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
 
         await bot.send_media_group(
             chat_id=-1002210540953,
-            message_thread_id=4,
+            message_thread_id=231,
             media=media_group
         )
         await bot.send_message(
@@ -330,10 +332,12 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
                  f'Номер телефона: {user.number}\n'
                  f'Номера автомобиля: {user.photo_auto_documents.auto_number}',
             chat_id=-1002210540953,
-            message_thread_id=4,
+            message_thread_id=231,
             reply_markup=markup.adjust(1).as_markup()
         )
+        user.active_auto = VerifType.waiting
         await state.clear()
+        await user.save()
 
     else:
         msg = await message.answer(
@@ -353,25 +357,44 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
     kb = InlineKeyboardBuilder()
 
     if callback_data.result == 'okay':
+        key = InlineKeyboardBuilder()
+
+        key.button(
+            text='📍Поделиться геопозицией',
+            callback_data='call_geoposition'
+        )
+
         kb.button(
             text='✅', callback_data='pass'
         )
+
         await bot.edit_message_reply_markup(
             chat_id=-1002210540953,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )
+
+        url = await create_payment_link(user)
+
         markup.button(
-            text='🚖 Тарифы', callback_data='tariff'
+            text='Оплатить 1000 ₽', web_app=WebAppInfo(url=url)
         )
         await bot.send_message(
             chat_id=user.user_id,
             text='Ваши документы успешно прошли проверку!\n'
-                 'Можете использовать весь функционал бота.',
+                 'Стоимость подключения к группе: 1000 рублей.',
             reply_markup=markup.adjust(1).as_markup()
+        )
+        await bot.send_message(
+            chat_id=user.user_id,
+            text=
+            'Для повышение приоритета выдачи заказов, вы можете поделиться своим местоположение, что бы операторы '
+            'видели вас около заказа и могли вам выдать ближайший!',
+            reply_markup=key.as_markup()
         )
 
         user.verification.verification_auto = True
+        user.active_auto = VerifType.yes
         await user.save()
     else:
         kb.button(
@@ -391,3 +414,5 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
             text='Ваши документы не прошли проверку.',
             reply_markup=markup.adjust(1).as_markup()
         )
+        user.active_doc = VerifType.no
+        await user.save()

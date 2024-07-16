@@ -7,7 +7,8 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.i18n import gettext as _, get_i18n
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, ChatMemberUpdated, FSInputFile, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, ChatMemberUpdated, FSInputFile, InlineKeyboardButton, \
+    InlineKeyboardMarkup
 from aiogram.filters.chat_member_updated import ChatMemberUpdatedFilter, MEMBER, KICKED
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from aiogram.fsm.context import FSMContext
@@ -15,8 +16,8 @@ from aiogram.fsm.context import FSMContext
 from data.settings import settings
 from database import Tariff, Order
 from database.models import User
-from database.models.users import DocumentType
-from handlers.users.base import SelectTariff
+from database.models.users import DocumentType, VerifType
+from handlers.users.base import SelectTariff, SelectVerificationType
 from helpers.functions import edit_send_media
 from helpers.keyboards.fabric import SelectLanguageCallback
 from helpers.keyboards.markups import default_markup, custom_back_button, custom_back_markup
@@ -34,17 +35,26 @@ async def check_tariff_plan(event: Union[Message, CallbackQuery], state: FSMCont
         await event.message.delete()
         answer = event.message.answer
 
-    if user.documents == DocumentType.untested:
-        kb = InlineKeyboardBuilder()
-        kb.button(
-            text='ℹ️ Верификация', callback_data='verification'
-        )
+    markup = InlineKeyboardBuilder()
+
+    if not user.verification.verification_user:
+        if user.active_doc == VerifType.no:
+            markup.button(
+                text='📃 Верификация документов',
+                callback_data=SelectVerificationType(action='open', verif='document')
+            )
+
+    if not user.verification.verification_auto:
+        if user.active_auto == VerifType.no:
+            markup.button(
+                text='📃 Верификация автомобиля',
+                callback_data=SelectVerificationType(action='open', verif='auto')
+            )
+
+    if user.active_doc == VerifType.no:
         await answer(
-            'Что бы приобрести тариф, ваш нужно верифицировать свои данные.\n\n'
-            'Используйте клавиатуру для верификации.',
-            reply_markup=kb.adjust(1).as_markup()
+
         )
-        return
 
     tariffs = await Tariff.all().to_list()
 
@@ -66,13 +76,11 @@ async def check_tariff_plan(event: Union[Message, CallbackQuery], state: FSMCont
         )
 
 
-@user_router.callback_query(SelectTariff.filter(F.action == 'open'))
-async def select_tariff(call: CallbackQuery, callback_data: SelectTariff, user: User):
-    tariff = await Tariff.find_one(
-        Tariff.identity == callback_data.identity
-    )
+@user_router.callback_query(F.data == 'pay_channel')
+async def select_tariff(call: CallbackQuery, user: User):
 
-    payment_data = await payment(amount=tariff.price)
+
+    payment_data = await payment(amount=1000)
     print(payment_data)
     url = payment_data.confirmation.confirmation_url
     print(url)
@@ -80,8 +88,7 @@ async def select_tariff(call: CallbackQuery, callback_data: SelectTariff, user: 
     await Order(
         user=user.id,
         identy=payment_data.id,
-        amount=tariff.price,
-        subscribe_id=tariff.identity
+        amount=1000,
     ).insert()
 
     markup = InlineKeyboardBuilder()

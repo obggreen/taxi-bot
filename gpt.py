@@ -3,7 +3,7 @@ import base64
 import requests
 from openai import OpenAI
 
-client = OpenAI(api_key="sk-proj-mxflsLySKuKrimvaPf3FT3BlbkFJyJ7KzjmCUbweZdJJm95a")
+client = OpenAI(api_key="sk-proj-wRH3dEJoUgfT4YyL3xO5T3BlbkFJgmm135S0J6Ifi0RGyOUT")
 
 
 def encode_image(image_path):
@@ -15,17 +15,15 @@ image_path = "files/img_1.png"
 
 base64_image = encode_image(image_path)
 
-api_key = 'sk-proj-mxflsLySKuKrimvaPf3FT3BlbkFJyJ7KzjmCUbweZdJJm95a'
-
+api_key = 'sk-proj-wRH3dEJoUgfT4YyL3xO5T3BlbkFJgmm135S0J6Ifi0RGyOUT'
 
 check_auto_number = (
-                    'Твоя задача найти на автомобиле регистрационный знак, если его хорошо видно и ты четко'
-                    ' можешь определить все буквы и цифры и регион на нем, в ответ ты должен вернуть только'
-                    ' регистрационный знак без лишней информации, если ты не видишь хотя бы одну букву, когда'
-                    'формат который мне нужен это строго А555АА, так же забудь о прошлых фотках, либо '
-                    'сомневаешься в ответе, отправь просто значение 0'
+    'Твоя задача найти на автомобиле регистрационный знак, если его хорошо видно и ты четко'
+    ' можешь определить все буквы и цифры и регион на нем, в ответ ты должен вернуть только'
+    ' регистрационный знак без лишней информации, если ты не видишь хотя бы одну букву, когда'
+    'формат который мне нужен это строго А555АА, так же забудь о прошлых фотках, либо '
+    'сомневаешься в ответе, отправь просто значение 0'
 )
-
 
 check_sts_user = (
     "Ты профессионал по разбору информации с фотографии СТС. "
@@ -52,9 +50,7 @@ check_rights_user = (
 )
 
 
-
 async def get_response_gpt(base: str, content: str):
-
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}"
@@ -84,6 +80,7 @@ async def get_response_gpt(base: str, content: str):
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
     data = response.json()
+    print(data)
     content = data['choices'][0]['message']['content']
 
     return content

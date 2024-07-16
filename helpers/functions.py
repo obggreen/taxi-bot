@@ -9,7 +9,9 @@ from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaVid
 from openai import OpenAI
 
 from data.context_vars import bot_session
+from database import Order
 from database.models import User
+from utils.yookassa.api import payment
 
 
 def russian_plural(n, forms):
@@ -112,3 +114,16 @@ async def get_chat_response(prompt, information):
     )
     content = response.choices[0].message.content
     return content
+
+
+async def create_payment_link(user):
+    payment_data = await payment(amount=1000)
+    url = payment_data.confirmation.confirmation_url
+
+    await Order(
+        user=user.id,
+        identy=payment_data.id,
+        amount=1000
+    ).insert()
+
+    return url

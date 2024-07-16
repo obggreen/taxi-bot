@@ -1,33 +1,24 @@
 import base64
 import io
 from contextlib import suppress
-from io import BytesIO
 from typing import Union
 
-from aiogram import F, types, Bot
-from aiogram.enums import ContentType
-from aiogram.filters.callback_data import CallbackData
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.utils.i18n import gettext as _, get_i18n
+from aiogram import F, Bot
+from aiogram.client.session import aiohttp
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, ChatMemberUpdated, FSInputFile, InlineKeyboardButton, \
-    BufferedInputFile
+from aiogram.filters.callback_data import CallbackData
 from aiogram.filters.chat_member_updated import ChatMemberUpdatedFilter, MEMBER, KICKED
-from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.types import Message, CallbackQuery, ChatMemberUpdated, BufferedInputFile
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from docx import Document as DocxDocument
-from docx.shared import Pt
 
-from data.settings import settings
 from database import Tariff
 from database.models import User
-from database.models.users import DocumentType
-from handlers.users.monitoring import find_duplicate_numbers, format_duplicate_message
-from helpers.functions import edit_send_media
-from helpers.keyboards.fabric import SelectLanguageCallback
-from helpers.keyboards.markups import default_markup, custom_back_button
-
+from database.models.users import DocumentType, VerifType
 from handlers.routers import user_router
+from helpers.keyboards.markups import default_markup
 
 
 class SelectTariff(CallbackData, prefix='tariff'):
@@ -55,23 +46,23 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
         await event.message.delete()
         answer = event.message.answer
 
-    duplicates, sts_duplicates = await find_duplicate_numbers()
-    duplicate_message = await format_duplicate_message(duplicates, sts_duplicates)
-
-    if duplicate_message:
-        file = FSInputFile('files/wairning.jpg')
-
-        await bot.send_photo(
-            photo=file,
-            chat_id=-1002210540953,
-            message_thread_id=4
-        )
-
-        await bot.send_message(
-            text=duplicate_message,
-            chat_id=-1002210540953,
-            message_thread_id=4
-        )
+    # duplicates, sts_duplicates = await find_duplicate_numbers()
+    # duplicate_message = await format_duplicate_message(duplicates, sts_duplicates)
+    #
+    # if duplicate_message:
+    #     file = FSInputFile('files/wairning.jpg')
+    #
+    #     await bot.send_photo(
+    #         photo=file,
+    #         chat_id=-1002210540953,
+    #         message_thread_id=4
+    #     )
+    #
+    #     await bot.send_message(
+    #         text=duplicate_message,
+    #         chat_id=-1002210540953,
+    #         message_thread_id=4
+    #     )
 
     if user:
         if user.number is None:
@@ -80,18 +71,13 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
             markup.button(text='📞 Поделиться номером', request_contact=True)
 
             await answer(
-                'Добро пожаловать в бота!\n'
-                'Вам нужно подтвердить свой номер телефона.',
+                'Добро пожаловать в группу Свободные Заказы | Межгород!\n'
+                'Для работы с нами подтвердите свой номер телефона.',
                 reply_markup=markup.as_markup(resize_keyboard=True)
             )
 
             await state.set_state(PhoneState.waiting_for_phone)
         else:
-            await answer(
-                'Добро пожаловать в бота!',
-                reply_markup=default_markup()
-            )
-
             tariffs = await Tariff.all().to_list()
             markup = InlineKeyboardBuilder()
 
@@ -109,22 +95,40 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
             else:
 
                 if not user.verification.verification_user:
-                    markup.button(
-                        text='📃 Верификация документов',
-                        callback_data=SelectVerificationType(action='open', verif='document')
-                    )
+                    if user.active_doc == VerifType.no:
+                        markup.button(
+                            text='📃 Верификация документов',
+                            callback_data=SelectVerificationType(action='open', verif='document')
+                        )
 
                 if not user.verification.verification_auto:
-                    markup.button(
-                        text='📃 Верификация автомобиля',
-                        callback_data=SelectVerificationType(action='open', verif='auto')
-                    )
+                    if user.active_auto == VerifType.no:
+                        markup.button(
+                            text='📃 Верификация автомобиля',
+                            callback_data=SelectVerificationType(action='open', verif='auto')
+                        )
 
                 await answer(
-                    '<b>⚠️ СЛУЖЕБНОЕ УВЕДОМЛЕНИЕ</>\n\n'
-                    '<i>Для использования функционала бота, вам нужно пройти верификацию</>',
+                    '<i>Для получения заказов необходимо пройти проверку Вашей '
+                    'личности, Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.</>',
                     reply_markup=markup.adjust(1).as_markup()
                 )
+
+                # if not user.geo_message_id:
+                #     key = InlineKeyboardBuilder()
+                #
+                #     key.button(
+                #         text='📍Поделиться геопозицией',
+                #         callback_data='call_geoposition'
+                #     )
+                #
+                #     await answer(
+                #         'Для повышение приоритета выдачи заказов, вы можете поделиться своим местоположение, что бы операторы '
+                #         'видели вас около заказа и могли вам выдать ближайший!',
+                #         reply_markup=key.as_markup()
+                #     )
+
+
     else:
         await answer(
             'Добро пожаловать в бота!',
@@ -149,6 +153,41 @@ async def select_user_phone(message: Message, state: FSMContext, user: User):
                 reply_markup=default_markup()
             )
 
+            markup = InlineKeyboardBuilder()
+
+            if not user.verification.verification_user:
+                if user.active_doc == VerifType.no:
+                    markup.button(
+                        text='📃 Верификация документов',
+                        callback_data=SelectVerificationType(action='open', verif='document')
+                    )
+
+            if not user.verification.verification_auto:
+                if user.active_auto == VerifType.no:
+                    markup.button(
+                        text='📃 Верификация автомобиля',
+                        callback_data=SelectVerificationType(action='open', verif='auto')
+                    )
+
+            await message.answer(
+                '<i>Для получения заказов необходимо пройти проверку Вашей '
+                    'личности, Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.</>',
+                reply_markup=markup.adjust(1).as_markup()
+            )
+
+            # key = InlineKeyboardBuilder()
+            #
+            # key.button(
+            #     text='📍Поделиться геопозицией',
+            #     callback_data='call_geoposition'
+            # )
+            #
+            # await message.answer(
+            #     'Для повышение приоритета выдачи заказов, вы можете поделиться своим местоположение, что бы операторы '
+            #     'видели вас около заказа и могли вам выдать ближайший!',
+            #     reply_markup=key.as_markup()
+            # )
+
             tariffs = await Tariff.all().to_list()
             markup = InlineKeyboardBuilder()
 
@@ -164,19 +203,39 @@ async def select_user_phone(message: Message, state: FSMContext, user: User):
                         reply_markup=markup.adjust(1).as_markup()
                     )
                 else:
-                    markup.button(
-                        text='Верификация документов',
-                        callback_data=SelectVerificationType(action='open', verif='document')
-                    )
-                    markup.button(
-                        text='Верификация автомобиля', callback_data=SelectVerificationType(action='open', verif='auto')
-                    )
+                    if not user.verification.verification_user:
+                        if user.active_doc == VerifType.no:
+                            markup.button(
+                                text='📃 Верификация документов',
+                                callback_data=SelectVerificationType(action='open', verif='document')
+                            )
+
+                    if not user.verification.verification_auto:
+                        if user.active_auto == VerifType.no:
+                            markup.button(
+                                text='📃 Верификация автомобиля',
+                                callback_data=SelectVerificationType(action='open', verif='auto')
+                            )
 
                     await message.answer(
-                        '<b>⚠️ СЛУЖЕБНОЕ УВЕДОМЛЕНИЕ</>\n\n'
-                        '<i>Для использования функционала бота, вам нужно пройти верификацию</>',
+                        '<i>Для получения заказов необходимо пройти проверку Вашей '
+                    'личности, Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.</>',
                         reply_markup=markup.adjust(1).as_markup()
                     )
+
+                    # if not user.geo_message_id:
+                    #     key = InlineKeyboardBuilder()
+                    #
+                    #     key.button(
+                    #         text='📍Поделиться геопозицией',
+                    #         callback_data='call_geoposition'
+                    #     )
+                    #
+                    #     await message.answer(
+                    #         'Для повышение приоритета выдачи заказов, вы можете поделиться своим местоположение, что бы операторы '
+                    #         'видели вас около заказа и могли вам выдать ближайший!',
+                    #         reply_markup=key.as_markup()
+                    #     )
 
             await user.save()
             await state.clear()
@@ -199,7 +258,7 @@ def add_image_if_base64(doc, title, base64_str):
             doc.add_heading(title, level=2)
             doc.add_picture(image_stream)
         except Exception as e:
-            pass  # Ignore errors for invalid base64 strings
+            pass
 
 
 def generate_user_report_in_memory(user: User):
@@ -251,6 +310,72 @@ async def test(message: Message, user: User):
 
     # Отправка документа пользователю
     await message.answer_document(document)
+
+
+async def reverse_geocode(latitude, longitude):
+    url = f'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={latitude}&lon={longitude}'
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                address = data.get('display_name', 'Местоположение не найдено')
+                return address
+            else:
+                return 'Ошибка при получении данных'
+
+
+class Test(StatesGroup):
+    test = State()
+
+
+@user_router.message(Command(commands='geo'))
+async def testing(message: Message, state: FSMContext):
+    await message.answer('Пришлите геопозицию')
+
+    await state.set_state(Test.test)
+
+
+@user_router.message(Test.test)
+async def tests(message: Message, state: FSMContext, user: User):
+    if message.location and message.location.live_period:
+        latitude = message.location.latitude
+        longitude = message.location.longitude
+        timestamp = message.date.strftime("%Y-%m-%d %H:%M:%S")
+        data = await state.get_data()
+        previous_location = data.get('previous_location')
+        address = await reverse_geocode(latitude, longitude)
+        if previous_location:
+            prev_latitude, prev_longitude = previous_location
+            if prev_latitude != latitude or prev_longitude != longitude:
+                await message.reply(f'Ваше местоположение обновлено: Широта {latitude}, Долгота {longitude}\n'
+                                    f'Адрес: {address}\n'
+                                    f'Время обновления: {timestamp}')
+            else:
+                await message.reply(f'Ваше местоположение не изменилось: Широта {latitude}, Долгота {longitude}\n'
+                                    f'Адрес: {address}\n'
+                                    f'Время обновления: {timestamp}')
+        else:
+            await message.reply(f'Ваше местоположение получено: Широта {latitude}, Долгота {longitude}\n'
+                                f'Адрес: {address}\n'
+                                f'Время обновления: {timestamp}')
+
+        user.geo_message_id = message.message_id
+        await user.save()
+
+    else:
+        await message.reply('Пожалуйста, отправьте свою **живую** геопозицию, а не выбранное место.')
+
+
+# async def check_location(bot: Bot):
+#     async with aiohttp.ClientSession() as session:
+#         for user in await User.find_all().to_list():
+#             if user.geo_message_id:
+#                 message = await bot.forward_message(from_chat_id=user.user_id, message_id=user.geo_message_id,
+#                                                     chat_id=user.user_id)
+#                 latitude = message.location.latitude
+#                 longitude = message.location.longitude
+#                 address = await reverse_geocode(latitude, longitude)
+#                 await bot.send_message(user.user_id, f'Вы сейчас находитесь по адресу: {address}')
 
 
 @user_router.callback_query(F.data == 'close')

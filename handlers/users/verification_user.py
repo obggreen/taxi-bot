@@ -9,7 +9,7 @@ from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaP
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database.models import User
-from database.models.users import DocumentType
+from database.models.users import DocumentType, VerifType
 from gpt import get_response_gpt, check_sts_user, check_rights_user
 from handlers.routers import user_router
 from handlers.users.base import SelectVerificationType
@@ -24,7 +24,7 @@ class UserDocumentPhoto(StatesGroup):
     right_face = State()
 
 
-class VerificarionUser(CallbackData, prefix='auto_verif'):
+class VerificarionUser(CallbackData, prefix='user_verif'):
     action: str
     identity: str
     result: str
@@ -84,7 +84,8 @@ async def select_front_photo(message: Message, state: FSMContext, bot: Bot):
 
         if gpt_check == '0':
             msg = await message.answer(
-                'Не смогли разобрать номера на вашем автомобиле, пришлите фотографию в лучшем качестве.'
+                'Не смогли разобрать ваши права, пришлите фотографию в лучшем качестве.',
+                reply_markup=custom_back_markup('start')
             )
             await state.update_data(msg=msg.message_id)
             return
@@ -253,7 +254,7 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
         photo_6_back_salon_bytes = base64.b64encode(file.read()).decode('utf-8')
 
         await message.answer(
-            f'✅ Ваши фотографии автомобиля успешно отправлена на модерацию администрации.\n\n'
+            f'✅ Ваши фотографии документов успешно отправлена на модерацию администрации.\n\n'
             f'Ожидайте уведомления о результате проверки.',
             reply_markup=custom_back_markup('start')
         )
@@ -275,6 +276,7 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
         user.photo_user_documents.person_right = photo_6_back_salon_bytes
         user.photo_user_documents.sts_number = data['sts_number']
         user.fio = data['fio']
+
         await user.save()
         await state.clear()
 
@@ -318,7 +320,9 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
             message_thread_id=4,
             reply_markup=markup.adjust(1).as_markup()
         )
+        user.active_doc = VerifType.waiting
         await state.clear()
+        await user.save()
 
     else:
         msg = await message.answer(
@@ -336,6 +340,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionUser, bo
     )
     markup = InlineKeyboardBuilder()
     kb = InlineKeyboardBuilder()
+    key = InlineKeyboardBuilder()
 
     if callback_data.result == 'okay':
         kb.button(
@@ -349,14 +354,29 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionUser, bo
         markup.button(
             text='🚖 Тарифы', callback_data='tariff'
         )
-        await bot.send_message(
-            chat_id=user.user_id,
-            text='Ваши личные документы успешно прошли проверку!\n'
-                 'Можете использовать весь функционал бота.',
-            reply_markup=markup.adjust(1).as_markup()
+
+        key.button(
+            text='📃 Верификация автомобиля',
+            callback_data=SelectVerificationType(action='open', verif='auto')
         )
 
-        user.verification.verification_auto = True
+        if user.active_auto == VerifType.yes:
+            await bot.send_message(
+                chat_id=user.user_id,
+                text='Ваши личные документы успешно прошли проверку!\n'
+                     'Можете использовать весь функционал бота.',
+                reply_markup=markup.adjust(1).as_markup()
+            )
+        else:
+            await bot.send_message(
+                chat_id=user.user_id,
+                text='Ваши личные документы успешно прошли проверку!\n'
+                     'Вам нужно пройти верификацию автомобиля:',
+                reply_markup=key.adjust(1).as_markup()
+            )
+
+        user.verification.verification_user = True
+        user.active_doc = VerifType.yes
         await user.save()
     else:
         kb.button(
@@ -368,6 +388,8 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionUser, bo
             reply_markup=kb.as_markup()
         )
 
+        user.active_doc = VerifType.no
+
         markup.button(
             text='Узнать почему', url='t.me/greenbot'
         )
@@ -376,3 +398,4 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionUser, bo
             text='Ваши документы не прошли проверку.',
             reply_markup=markup.adjust(1).as_markup()
         )
+        await user.save()

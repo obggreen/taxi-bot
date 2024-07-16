@@ -1,9 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from beanie import Document, BeanieObjectId, Indexed
 from pydantic import BaseModel, Field
-from traitlets import List
 
 
 # Constants
@@ -16,6 +15,12 @@ class UserType:
 class DocumentType:
     verified = 'verified'
     untested = 'untested'
+
+
+class VerifType:
+    no = 'нет заявки'
+    waiting = 'ожидает'
+    yes = 'верифицирован'
 
 
 class UserVerification(BaseModel):
@@ -42,6 +47,13 @@ class UserPhotoMe(BaseModel):
     sts_number: Optional[str] = None
 
 
+class UserGPS(BaseModel):
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    live_period: Optional[int] = None
+    last_location_update: Optional[datetime] = None
+
+
 class UserSettings(BaseModel):
     language: str = 'ru'
 
@@ -61,13 +73,18 @@ class User(Document):
     photo_auto_documents: UserDocument = UserDocument()
     photo_user_documents: UserPhotoMe = UserPhotoMe()
     verification: UserVerification = UserVerification()
+    active_auto: str = VerifType.no
+    active_doc: str = VerifType.no
     number: Optional[int] = None
+    geo_message_id : Optional[int] = None
 
     subscription: Optional[BeanieObjectId] = None
 
     balance: float = 5
 
     settings: UserSettings = UserSettings()
+
+    gps: UserGPS = UserGPS()
 
     blocked_bot: bool = False
     registration_date: datetime = Field(default_factory=datetime.utcnow)

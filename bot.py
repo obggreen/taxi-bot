@@ -18,6 +18,9 @@ from data.settings import settings
 from database import User, Tariff
 from database.models.orders import Order, OrderStatus
 from handlers.routers import admin_router, user_router
+from handlers.users.gps_modul import check_location
+# from handlers.users.base import check_location
+# from handlers.users.base import monitoring_geo
 from handlers.users.monitoring import monitoring
 from helpers.keyboards.markups import custom_back_button
 from middlewares.i18n_middleware import ACLMiddleware
@@ -39,47 +42,47 @@ async def check_invoices_status(bot: Bot):
             User.id == invoice.user
         )
         if result == 'succeeded':
+            link = await bot.create_chat_invite_link(
+                chat_id=-1002233906745,
+                name=user.username
+            )
             markup = InlineKeyboardBuilder()
+            markup.button(text='🔗 Вступить в группу', url=link.invite_link)
             markup.button(text='🧑🏼‍💻 Техническая поддержка', url='https://t.me/obggreen')
             markup.row(custom_back_button('start'))
 
-            tariff = await Tariff.find_one(
-                Tariff.identity == invoice.subscribe_id
-            )
-
-            if invoice.description != 'block':
+            if invoice.type != 'block':
                 await bot.send_message(
                     user.user_id,
                     text=
                     'Оплата успешно получена!🎉\n\n'
-                    'Ваша личная ссылка на вступление в чат:'
-                    '.................\n\n'
                     'По ссылке можете перейти только вы, она действует лишь один раз и сверяется по базе покупок, '
                     'если вы'
                     'приобретете доступ другому человеку, мы это заметим и аннулируем вашу подписку и ваши деньги '
-                    'сгорят.\n\n'
-                    'Приятного использования!',
+                    'сгорят.\n\n',
                     reply_markup=markup.adjust(1).as_markup()
                 )
 
-                user.subscription = tariff.id
                 invoice.status = OrderStatus.success
                 await invoice.save()
-                await user.save()
             else:
                 await bot.send_message(
                     user.user_id,
                     text=
                     'Покупка разблокировки прошла успешно!\n\n'
-                    'В следующий раз старайтесь не нарушать правила сервиса!',
-                    reply_markup=markup.adjust(1).as_markup()
+                    'В следующий раз старайтесь не нарушать правила сервиса!'
                 )
+                user.blocked_bot = False
+                invoice.status = OrderStatus.success
+                await invoice.save()
+                await user.save()
 
 
 async def start_scheduler(bot: Bot, session: AiohttpSession):
     scheduler = AsyncIOScheduler()
     scheduler.add_job(check_invoices_status, 'interval', seconds=10, args=[bot])
     scheduler.add_job(monitoring, 'interval', seconds=10, args=[bot])
+    scheduler.add_job(check_location, 'interval', seconds=14400, args=[bot])
     scheduler.start()
 
 

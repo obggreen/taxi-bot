@@ -62,6 +62,8 @@ async def format_duplicate_message(duplicates: Dict[str, List[int]], sts_duplica
         for user_id in user_ids:
             user = await get_user_by_id(user_id)
             if user:
+                user.verification.verification_user = False
+                user.verification.verification_auto = False
                 fio = user.fio or 'ФИО пользователя не найдено'
                 user_number = user.number or 'Номера нету'
                 username = user.username or f"user_id: {user.user_id}"
@@ -71,6 +73,7 @@ async def format_duplicate_message(duplicates: Dict[str, List[int]], sts_duplica
                                  f"{car_info}\n"
                                  f"ФИО: {fio}\n"
                                  f"Номер: {user_number}")
+                await user.save()
 
         if user_info:
             messages.append(f"<b>⚠️ Найден дубликат пользователей с гос номером {number}:</b>\n" + "\n".join(user_info))
