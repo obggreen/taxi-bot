@@ -3,7 +3,7 @@ import base64
 import requests
 from openai import OpenAI
 
-client = OpenAI(api_key="sk-proj-wRH3dEJoUgfT4YyL3xO5T3BlbkFJgmm135S0J6Ifi0RGyOUT")
+client = OpenAI(api_key="sk-proj-dhg5e5B3YEPH4V4TulRRT3BlbkFJNmgTbuiwhmTHCFnoMmjt")
 
 
 def encode_image(image_path):
@@ -15,7 +15,7 @@ image_path = "files/img_1.png"
 
 base64_image = encode_image(image_path)
 
-api_key = 'sk-proj-wRH3dEJoUgfT4YyL3xO5T3BlbkFJgmm135S0J6Ifi0RGyOUT'
+api_key = 'sk-proj-dhg5e5B3YEPH4V4TulRRT3BlbkFJNmgTbuiwhmTHCFnoMmjt'
 
 check_auto_number = (
     'Твоя задача найти на автомобиле регистрационный знак, если его хорошо видно и ты четко'
@@ -81,6 +81,9 @@ async def get_response_gpt(base: str, content: str):
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
     data = response.json()
     print(data)
+
     content = data['choices'][0]['message']['content']
+
+
 
     return content
