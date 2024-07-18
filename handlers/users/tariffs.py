@@ -53,8 +53,11 @@ async def check_tariff_plan(event: Union[Message, CallbackQuery], state: FSMCont
 
     if user.active_doc == VerifType.no:
         await answer(
-
+            'Для получения заказов необходимо пройти проверку Вашей личности, '
+            'Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.',
+            reply_markup=markup.adjust(1).as_markup()
         )
+        return
 
     tariffs = await Tariff.all().to_list()
 

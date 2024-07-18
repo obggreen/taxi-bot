@@ -1,3 +1,5 @@
+import base64
+import io
 from contextlib import suppress
 from datetime import datetime
 from typing import Union
@@ -6,12 +8,15 @@ from aiogram import Bot
 from aiogram.enums import ContentType
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaVideo, FSInputFile
+from docx.shared import Inches
 from openai import OpenAI
 
 from data.context_vars import bot_session
 from database import Order
 from database.models import User
 from utils.yookassa.api import payment
+from docx import Document as DocxDocument
+
 
 
 def russian_plural(n, forms):
@@ -127,3 +132,55 @@ async def create_payment_link(user):
     ).insert()
 
     return url
+
+
+def add_image_if_base64(doc, title, image_base64, width=Inches(3.0)):
+    if image_base64:
+        image_data = base64.b64decode(image_base64)
+        paragraph = doc.add_paragraph()
+        run = paragraph.add_run()
+        run.add_picture(io.BytesIO(image_data), width=width)
+        paragraph.alignment = 1  # Center the image
+        paragraph = doc.add_paragraph(title)
+        paragraph.alignment = 1  # Center the title
+
+
+def generate_user_report_in_memory(user: User):
+    doc = DocxDocument()
+
+    doc.add_heading(f'Досье на пользователя {user.full_name}', 0)
+
+    doc.add_heading('Основная информация', level=1)
+    doc.add_paragraph(f'Полное имя: {user.full_name}')
+    doc.add_paragraph(f'Имя пользователя: {user.username}')
+    doc.add_paragraph(f'Роль: {user.role}')
+    doc.add_paragraph(f'Дата регистрации: {user.registration_date.strftime("%Y-%m-%d %H:%M:%S")}')
+    doc.add_paragraph(
+        f'Последняя активность: {user.last_active.strftime("%Y-%m-%d %H:%M:%S") if user.last_active else "N/A"}')
+
+    doc.add_heading('Верификация', level=1)
+    doc.add_paragraph(f'Верификация на автомобиль: {"Да" if user.verification.verification_auto else "Нет"}')
+    doc.add_paragraph(f'Верификация на документы: {"Да" if user.verification.verification_user else "Нет"}')
+
+    doc.add_heading('Настройки', level=1)
+    doc.add_paragraph(f'Язык: {user.settings.language}')
+
+    doc.add_heading('Финансовая информация', level=1)
+    doc.add_paragraph(f'Баланс: {user.balance} руб.')
+    doc.add_paragraph(f'Подписка: {user.subscription if user.subscription else "Нет"}')
+
+    doc.add_heading('Информация об автомобиле', level=1)
+    if user.photo_auto_documents:
+        doc.add_paragraph(f'Номера автомобиля: {user.photo_auto_documents.auto_number}')
+        add_image_if_base64(doc, 'Перед автомобиля', user.photo_auto_documents.auto_front)
+        add_image_if_base64(doc, 'Левая сторона автомобиля', user.photo_auto_documents.auto_left)
+        add_image_if_base64(doc, 'Правая сторона автомобиля', user.photo_auto_documents.auto_right)
+        add_image_if_base64(doc, 'Зад автомобиля', user.photo_auto_documents.auto_back)
+        add_image_if_base64(doc, 'Салон спереди', user.photo_auto_documents.salon_front)
+        add_image_if_base64(doc, 'Зад салона', user.photo_auto_documents.salon_back)
+
+    byte_stream = io.BytesIO()
+    doc.save(byte_stream)
+    byte_stream.seek(0)
+
+    return byte_stream
