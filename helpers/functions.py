@@ -184,3 +184,7 @@ def generate_user_report_in_memory(user: User):
     byte_stream.seek(0)
 
     return byte_stream
+
+
+async def monitoring_group(bot: Bot):
+    chat_member = await bot.get_chat_member()

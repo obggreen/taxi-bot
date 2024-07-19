@@ -5,7 +5,7 @@ from aiogram import F, Bot
 from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaPhoto
+from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaPhoto, FSInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database.models import User
@@ -52,8 +52,12 @@ async def verification_user_start(call: CallbackQuery):
 
 @user_router.callback_query(F.data == 'yes_user_verification')
 async def start_user(call: CallbackQuery, state: FSMContext):
-    msg = await call.message.edit_text(
-        '<b>Отправьте фотографию прав лицевой стороной:</b>',
+    await call.message.delete()
+    photo = FSInputFile('files/2Права.jpg')
+
+    msg = await call.message.answer_photo(
+        photo=photo,
+        caption='<b>Отправьте фотографию прав лицевой стороной:</b>',
         reply_markup=custom_back_markup('start')
     )
 
@@ -90,7 +94,11 @@ async def select_front_photo(message: Message, state: FSMContext, bot: Bot):
             await state.update_data(msg=msg.message_id)
             return
 
-        msg = await message.answer(
+        photo = FSInputFile('files/1Права.jpg')
+
+        msg = await message.answer_photo(
+            photo=photo,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Пришлите права задней части:',
             reply_markup=custom_back_markup('start')
@@ -128,7 +136,11 @@ async def select_bask_photo(message: Message, state: FSMContext, bot: Bot):
         file = await bot.download_file(file_info.file_path)
         photo_2_left_bytes = base64.b64encode(file.read()).decode('utf-8')
 
-        msg = await message.answer(
+        photo = FSInputFile('files/СТС2.jpg')
+
+        msg = await message.answer_photo(
+            photo=photo,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Пришлите лицевую часть СТС:',
             reply_markup=custom_back_markup('start')
@@ -178,7 +190,11 @@ async def select_bask_photo(message: Message, state: FSMContext, bot: Bot):
             await state.update_data(msg=msg.message_id)
             return
 
-        msg = await message.answer(
+        photo = FSInputFile('files/СТС1.jpg')
+
+        msg = await message.answer_photo(
+            photo=photo,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Пришлите заднюю часть СТС:',
             reply_markup=custom_back_markup('start')
@@ -216,7 +232,11 @@ async def select_bask_photo(message: Message, state: FSMContext, bot: Bot):
         file = await bot.download_file(file_info.file_path)
         photo_5_left_bytes = base64.b64encode(file.read()).decode('utf-8')
 
-        msg = await message.answer(
+        photo = FSInputFile('files/Фотопаспорт.jpg')
+
+        msg = await message.answer_photo(
+            photo=photo,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Пришлите фотографию прав в одном кадре рядом со своим лицом:',
             reply_markup=custom_back_markup('start')
