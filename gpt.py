@@ -3,7 +3,7 @@ import base64
 import requests
 from openai import OpenAI
 
-client = OpenAI(api_key="sk-proj-dhg5e5B3YEPH4V4TulRRT3BlbkFJNmgTbuiwhmTHCFnoMmjt")
+# client = OpenAI(api_key="sk-proj-oj9ebJMjRtPLhoLHPIxlT3BlbkFJsHJfr7ZEhVsf4t3AXUAm")
 
 
 def encode_image(image_path):
@@ -15,7 +15,7 @@ image_path = "files/img_1.png"
 
 base64_image = encode_image(image_path)
 
-api_key = 'sk-proj-dhg5e5B3YEPH4V4TulRRT3BlbkFJNmgTbuiwhmTHCFnoMmjt'
+api_key = 'sk-proj-oj9ebJMjRtPLhoLHPIxlT3BlbkFJsHJfr7ZEhVsf4t3AXUAm'
 
 check_auto_number = (
     'Твоя задача найти на автомобиле регистрационный знак, если его хорошо видно и ты четко'
