@@ -1,36 +1,13 @@
-import base64
-import io
-from contextlib import suppress
-from datetime import datetime
-from io import BytesIO
-from typing import Union
-
 import pytz
-from aiogram import F, types, Bot
+from aiogram import F, Bot
 from aiogram.client.session import aiohttp
-from aiogram.enums import ContentType
-from aiogram.filters.callback_data import CallbackData
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.utils.i18n import gettext as _, get_i18n
-from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, ChatMemberUpdated, FSInputFile, InlineKeyboardButton, \
-    BufferedInputFile, KeyboardButton
-from aiogram.filters.chat_member_updated import ChatMemberUpdatedFilter, MEMBER, KICKED
-from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from aiogram.fsm.context import FSMContext
-from docx import Document as DocxDocument
-from docx.shared import Pt
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.types import Message, CallbackQuery
 
-from data.settings import settings
-from database import Tariff
 from database.models import User
-from database.models.users import DocumentType, VerifType
-from handlers.users.monitoring import find_duplicate_numbers, format_duplicate_message
-from helpers.functions import edit_send_media
-from helpers.keyboards.fabric import SelectLanguageCallback
-from helpers.keyboards.markups import default_markup, custom_back_button, custom_back_markup
-
 from handlers.routers import user_router
+from helpers.keyboards.markups import custom_back_markup
 
 
 class SelectGPSUSer(StatesGroup):

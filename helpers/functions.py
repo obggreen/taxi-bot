@@ -1,10 +1,12 @@
 import base64
 import io
+import random
 from contextlib import suppress
 from datetime import datetime
 from typing import Union
 
 from aiogram import Bot
+from aiogram.client.session import aiohttp
 from aiogram.enums import ContentType
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaVideo, FSInputFile
@@ -186,5 +188,30 @@ def generate_user_report_in_memory(user: User):
     return byte_stream
 
 
-async def monitoring_group(bot: Bot):
-    chat_member = await bot.get_chat_member()
+def generate_pincode(length=4):
+    return ''.join([str(random.randint(0, 9)) for _ in range(length)])
+
+
+async def make_tellcode_call(phone, pincode=None):
+    if pincode is None:
+        pincode = generate_pincode()
+
+    url = "https://zvonok.com/manager/cabapi_external/api/v1/phones/tellcode/"
+    payload = {
+        'public_key': '55ea612b7d737fc2c35d2054e5da1fcb',
+        'phone': phone,
+        'campaign_id': 2008415037,
+        'pincode': pincode
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, data=payload) as response:
+            print(response)
+            if response.status == 200:
+                response_data = await response.json()
+                if response_data['status'] == "ok":
+                    return response_data['data']['pincode']
+                else:
+                    return None
+            else:
+                return None

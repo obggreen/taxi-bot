@@ -18,7 +18,8 @@ from database import Tariff
 from database.models import User
 from database.models.users import DocumentType, VerifType
 from handlers.routers import user_router
-from helpers.keyboards.markups import default_markup
+from helpers.functions import make_tellcode_call
+from helpers.keyboards.markups import default_markup, custom_back_markup
 
 
 class SelectTariff(CallbackData, prefix='tariff'):
@@ -33,6 +34,7 @@ class SelectVerificationType(CallbackData, prefix='ver'):
 
 class PhoneState(StatesGroup):
     waiting_for_phone = State()
+    waiting_for_sms = State()
 
 
 @user_router.callback_query(F.data == 'start')
@@ -142,7 +144,7 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
 
 
 @user_router.message(PhoneState.waiting_for_phone)
-async def select_user_phone(message: Message, state: FSMContext, user: User):
+async def select_user_phone(message: Message, state: FSMContext, user: User, bot: Bot):
     if message.contact:
         contact = message.contact
 
@@ -153,106 +155,93 @@ async def select_user_phone(message: Message, state: FSMContext, user: User):
 
             user.number = corrected_number
 
-            await message.answer(
-                '💬 Номер телефона успешно сохранен!',
-                reply_markup=default_markup()
-            )
-
-            markup = InlineKeyboardBuilder()
-
-            if not user.verification.verification_user:
-                if user.active_doc == VerifType.no:
-                    markup.button(
-                        text='📃 Верификация документов',
-                        callback_data=SelectVerificationType(action='open', verif='document')
-                    )
-
-            if not user.verification.verification_auto:
-                if user.active_auto == VerifType.no:
-                    markup.button(
-                        text='📃 Верификация автомобиля',
-                        callback_data=SelectVerificationType(action='open', verif='auto')
-                    )
-
-            await message.answer(
-                '<i>Для получения заказов необходимо пройти проверку Вашей '
-                    'личности, Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.</>',
-                reply_markup=markup.adjust(1).as_markup()
-            )
-
-            # key = InlineKeyboardBuilder()
-            #
-            # key.button(
-            #     text='📍Поделиться геопозицией',
-            #     callback_data='call_geoposition'
-            # )
-            #
-            # await message.answer(
-            #     'Для повышение приоритета выдачи заказов, вы можете поделиться своим местоположение, что бы операторы '
-            #     'видели вас около заказа и могли вам выдать ближайший!',
-            #     reply_markup=key.as_markup()
-            # )
-
-            tariffs = await Tariff.all().to_list()
-            markup = InlineKeyboardBuilder()
-
-            if user.documents == DocumentType.verified:
-                if tariffs:
-                    for tariff in tariffs:
-                        markup.button(
-                            text=tariff.name, callback_data=SelectTariff(action='open', identity=tariff.identity)
-                        )
-
-                    await message.answer(
-                        'Выберите желаемый для вас тарифный план:  ⤵️',
-                        reply_markup=markup.adjust(1).as_markup()
-                    )
-                else:
-                    if not user.verification.verification_user:
-                        if user.active_doc == VerifType.no:
-                            markup.button(
-                                text='📃 Верификация документов',
-                                callback_data=SelectVerificationType(action='open', verif='document')
-                            )
-
-                    if not user.verification.verification_auto:
-                        if user.active_auto == VerifType.no:
-                            markup.button(
-                                text='📃 Верификация автомобиля',
-                                callback_data=SelectVerificationType(action='open', verif='auto')
-                            )
-
-                    await message.answer(
-                        '<i>Для получения заказов необходимо пройти проверку Вашей '
-                    'личности, Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.</>',
-                        reply_markup=markup.adjust(1).as_markup()
-                    )
-
-                    # if not user.geo_message_id:
-                    #     key = InlineKeyboardBuilder()
-                    #
-                    #     key.button(
-                    #         text='📍Поделиться геопозицией',
-                    #         callback_data='call_geoposition'
-                    #     )
-                    #
-                    #     await message.answer(
-                    #         'Для повышение приоритета выдачи заказов, вы можете поделиться своим местоположение, что бы операторы '
-                    #         'видели вас около заказа и могли вам выдать ближайший!',
-                    #         reply_markup=key.as_markup()
-                    #     )
-
-            await user.save()
-            await state.clear()
+            call_user = await make_tellcode_call(contact.phone_number)
+            if call_user:
+                msg = await message.answer(
+                    'Сейчас вам позвонят и продиктуют 4-х значный код, введите его в ответ на это сообщение:',
+                    reply_markup=custom_back_markup('start')
+                )
+                await state.set_state(PhoneState.waiting_for_sms)
+                await state.update_data(code=call_user, number=corrected_number, msg=msg.message_id)
+            else:
+                msg = await message.answer(
+                    'Произошла ошибка при отправке кода на ваш номер, попробуйте еще раз '
+                    'или свяжитесь с администратором!',
+                    reply_markup=custom_back_markup('start')
+                )
+                await state.update_data(msg=msg.message_id)
+                return
         else:
-            await message.answer(
-                '❌ Произошла ошибка при получение номера, попробуйте позже.'
+            msg = await message.answer(
+                'Не получилось получить номер, попробуйте еще раз или свяжитесь с администратором',
+                reply_markup=custom_back_markup('start')
             )
-            await state.clear()
+            await state.update_data(msg=msg.message_id)
+            return
     else:
-        await message.answer(
-            'Сообщение не содержит телефона или вы поделились телефоном не через кнопку.'
+        msg = await message.answer(
+            'Сообщение не содержит телефона или вы поделились телефоном не через кнопку.',
+            reply_markup=custom_back_markup('start')
         )
+        await state.update_data(msg=msg.message_id)
+        return
+
+@user_router.message(PhoneState.waiting_for_sms)
+async def select_user_phone(message: Message, state: FSMContext, user: User, bot: Bot):
+    data = await state.get_data()
+    number = data['number']
+    code = data['code']
+    message_id = data['msg']
+
+    await bot.edit_message_reply_markup(
+        chat_id=message.chat.id,
+        message_id=message_id,
+        reply_markup=None
+    )
+
+    if message.text == code:
+        markup = InlineKeyboardBuilder()
+        user.number = number
+        await user.save()
+        await message.answer(
+            'Код успешно введен, ваш номер верифицирован в системе!',
+            reply_markup=default_markup()
+        )
+
+        if not user.verification.verification_user:
+            if user.active_doc == VerifType.no:
+                markup.button(
+                    text='📃 Верификация документов',
+                    callback_data=SelectVerificationType(action='open', verif='document')
+                )
+
+        if not user.verification.verification_auto:
+            if user.active_auto == VerifType.no:
+                markup.button(
+                    text='📃 Верификация автомобиля',
+                    callback_data=SelectVerificationType(action='open', verif='auto')
+                )
+
+        await message.answer(
+            '<i>Для получения заказов необходимо пройти проверку Вашей '
+            'личности, Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.</>',
+            reply_markup=markup.adjust(1).as_markup()
+        )
+
+        if user.verification.verification_auto:
+            await message.answer(
+                'тут покупка'
+            )
+
+        await state.clear()
+    else:
+        msg = await message.answer(
+            'Код введен не верно, попробуйте еще раз:',
+            reply_markup=custom_back_markup('start')
+        )
+        await state.update_data(msg=msg.message_id)
+        return
+
 
 
 # def add_image_if_base64(doc, title, base64_str):
