@@ -43,7 +43,7 @@ async def check_invoices_status(bot: Bot):
         )
         if result == 'succeeded':
             link = await bot.create_chat_invite_link(
-                chat_id=-1002233906745,
+                chat_id=-4218647142,
                 name=user.username
             )
             markup = InlineKeyboardBuilder()
@@ -63,6 +63,15 @@ async def check_invoices_status(bot: Bot):
                     reply_markup=markup.adjust(1).as_markup()
                 )
 
+                await bot.send_message(
+                    chat_id=-1002233300548,
+                    message_thread_id=6,
+                    text=
+                    '<b>🎉 Новая оплата на вступление</>\n'
+                    f'Оплатил пользователь: {user.username}\n'
+                    f'UserID: {user.user_id}\n'
+                )
+
                 invoice.status = OrderStatus.success
                 await invoice.save()
             else:
@@ -72,6 +81,15 @@ async def check_invoices_status(bot: Bot):
                     'Покупка разблокировки прошла успешно!\n\n'
                     'В следующий раз старайтесь не нарушать правила сервиса!'
                 )
+                await bot.send_message(
+                    chat_id=-1002233300548,
+                    message_thread_id=3,
+                    text=
+                    '<b>🎉 Новая разблокировка на вступление</>\n'
+                    f'Оплатил пользователь: {user.username}\n'
+                    f'UserID: {user.user_id}\n'
+                )
+
                 user.blocked_bot = False
                 invoice.status = OrderStatus.success
                 await invoice.save()

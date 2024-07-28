@@ -57,7 +57,7 @@ async def start_user(call: CallbackQuery, state: FSMContext):
 
     msg = await call.message.answer_photo(
         photo=photo,
-        caption='<b>Отправьте фотографию прав лицевой стороной:</b>',
+        caption='<b>Отправьте фотографию водительских прав лицевой стороной:</b>',
         reply_markup=custom_back_markup('start')
     )
 
@@ -327,8 +327,8 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
         )
 
         await bot.send_media_group(
-            chat_id=-1002210540953,
-            message_thread_id=4,
+            chat_id=-1002233300548,
+            message_thread_id=3,
             media=media_group
         )
         await bot.send_message(
@@ -336,8 +336,8 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
                  f'Номер телефона: {user.number}\n'
                  f'ФИО: <b>{user.fio}</>\n'
                  f'<b>Данные СТС</>:\n{sts_info}',
-            chat_id=-1002210540953,
-            message_thread_id=4,
+            chat_id=-1002233300548,
+            message_thread_id=3,
             reply_markup=markup.adjust(1).as_markup()
         )
         user.active_doc = VerifType.waiting
@@ -367,7 +367,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionUser, bo
             text='✅', callback_data='pass'
         )
         await bot.edit_message_reply_markup(
-            chat_id=-1002210540953,
+            chat_id=-1002233300548,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )
@@ -403,7 +403,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionUser, bo
             text='✅', callback_data='pass'
         )
         await bot.edit_message_reply_markup(
-            chat_id=-1002210540953,
+            chat_id=-1002233300548,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )

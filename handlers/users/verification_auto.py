@@ -1,11 +1,12 @@
 import base64
 import types
+from contextlib import suppress
 
 from aiogram import F, Bot
 from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaPhoto, WebAppInfo
+from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaPhoto, WebAppInfo, FSInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database.models import User
@@ -54,8 +55,10 @@ async def verification_auto_start(call: CallbackQuery):
 
 @user_router.callback_query(F.data == 'yes_auto_verification')
 async def start_auto(call: CallbackQuery, state: FSMContext):
-    msg = await call.message.edit_text(
-        '<b>Отправьте фотографию автомобиля спереди в ответ на данное сообщение!</b>',
+    file = FSInputFile('files/MBF1.jpg')
+    msg = await call.message.answer_photo(
+        photo=file,
+        caption='<b>Отправьте автомобиль с видом спереди:</b>',
         reply_markup=custom_back_markup('start')
     )
 
@@ -67,11 +70,12 @@ async def start_auto(call: CallbackQuery, state: FSMContext):
 async def select_front_photo(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     message_id = data['msg']
-    await bot.edit_message_reply_markup(
-        chat_id=message.chat.id,
-        message_id=message_id,
-        reply_markup=None
-    )
+    with suppress(Exception):
+        await bot.edit_message_reply_markup(
+            chat_id=message.chat.id,
+            message_id=message_id,
+            reply_markup=None
+        )
 
     if message.photo:
         photo = message.photo[-1]
@@ -93,7 +97,11 @@ async def select_front_photo(message: Message, state: FSMContext, bot: Bot):
             await state.update_data(msg=msg.message_id)
             return
 
-        msg = await message.answer(
+        file = FSInputFile('files/MBR2.jpg')
+
+        msg = await message.answer_photo(
+            photo=file,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Номера вашего автомобиля: <b>{gpt_check}</>\n\n'
             f'Пришлите фотографию автомобиля с правой стороны:',
@@ -131,8 +139,10 @@ async def select_left_photo(message: Message, state: FSMContext, bot: Bot):
         file_info = await bot.get_file(photo.file_id)
         file = await bot.download_file(file_info.file_path)
         photo_2_left_bytes = base64.b64encode(file.read()).decode('utf-8')
-
-        msg = await message.answer(
+        file = FSInputFile('files/MBR1.jpg')
+        msg = await message.answer_photo(
+            photo=file,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Пришлите фотографию автомобиля с левой стороны:',
             reply_markup=custom_back_markup('start')
@@ -169,7 +179,11 @@ async def select_right_photo(message: Message, state: FSMContext, bot: Bot):
         file = await bot.download_file(file_info.file_path)
         photo_3_right_bytes = base64.b64encode(file.read()).decode('utf-8')
 
-        msg = await message.answer(
+        file = FSInputFile('files/BMB1.jpg')
+
+        msg = await message.answer_photo(
+            photo=file,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Пришлите фотографию автомобиля сзади:',
             reply_markup=custom_back_markup('start')
@@ -206,7 +220,11 @@ async def select_back_photo(message: Message, state: FSMContext, bot: Bot):
         file = await bot.download_file(file_info.file_path)
         photo_4_back_bytes = base64.b64encode(file.read()).decode('utf-8')
 
-        msg = await message.answer(
+        file = FSInputFile('files/BMIU2.jpg')
+
+        msg = await message.answer_photo(
+            photo=file,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Пришлите фотографию салона спереди:',
             reply_markup=custom_back_markup('start')
@@ -242,8 +260,10 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot):
         file_info = await bot.get_file(photo.file_id)
         file = await bot.download_file(file_info.file_path)
         photo_5_front_salon_bytes = base64.b64encode(file.read()).decode('utf-8')
-
-        msg = await message.answer(
+        file = FSInputFile('files/Задний рядл.jpg')
+        msg = await message.answer_photo(
+            photo=file,
+            caption=
             f'✅ Фотография принята\n\n'
             f'Пришлите фотографию салона сзади:',
             reply_markup=custom_back_markup('start')
@@ -323,16 +343,16 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
         ]
 
         await bot.send_media_group(
-            chat_id=-1002210540953,
-            message_thread_id=231,
+            chat_id=-1002233300548,
+            message_thread_id=4,
             media=media_group
         )
         await bot.send_message(
             text=f'Username: <b>@{user.username}</>\n'
                  f'Номер телефона: {user.number}\n'
                  f'Номера автомобиля: {user.photo_auto_documents.auto_number}',
-            chat_id=-1002210540953,
-            message_thread_id=231,
+            chat_id=-1002233300548,
+            message_thread_id=4,
             reply_markup=markup.adjust(1).as_markup()
         )
         user.active_auto = VerifType.waiting
@@ -357,19 +377,19 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
     kb = InlineKeyboardBuilder()
 
     if callback_data.result == 'okay':
-        key = InlineKeyboardBuilder()
-
-        key.button(
-            text='📍Поделиться геопозицией',
-            callback_data='call_geoposition'
-        )
+        # key = InlineKeyboardBuilder()
+        #
+        # key.button(
+        #     text='📍Поделиться геопозицией',
+        #     callback_data='call_geoposition'
+        # )
 
         kb.button(
             text='✅', callback_data='pass'
         )
 
         await bot.edit_message_reply_markup(
-            chat_id=-1002210540953,
+            chat_id=-1002233300548,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )
@@ -389,8 +409,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
             chat_id=user.user_id,
             text=
             'Для повышение приоритета выдачи заказов, вы можете поделиться своим местоположение, что бы операторы '
-            'видели вас около заказа и могли вам выдать ближайший!',
-            reply_markup=key.as_markup()
+            'видели вас около заказа и могли вам выдать ближайший!'
         )
 
         user.verification.verification_auto = True
@@ -401,7 +420,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
             text='✅', callback_data='pass'
         )
         await bot.edit_message_reply_markup(
-            chat_id=-1002210540953,
+            chat_id=-1002233300548,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )

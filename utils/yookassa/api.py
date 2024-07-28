@@ -4,8 +4,8 @@ import uuid
 
 from yookassa import Configuration, Payment
 
-Configuration.account_id = 404046
-Configuration.secret_key = 'test_suzHA5IYfqVJ27EJSREIYQ4kU8iZ5w2Tulf89p4f-oA'
+Configuration.account_id = 424513
+Configuration.secret_key = 'live_c1rXcAjX_T39V4lFkGAx13sfu_63x3UBkYj1BrQ12JM'
 
 
 async def payment(amount):
