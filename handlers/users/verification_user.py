@@ -57,7 +57,7 @@ async def start_user(call: CallbackQuery, state: FSMContext):
 
     msg = await call.message.answer_photo(
         photo=photo,
-        caption='<b>Отправьте фотографию прав лицевой стороной:</b>',
+        caption='<b>Отправьте фотографию водительских прав лицевой стороной:</b>',
         reply_markup=custom_back_markup('start')
     )
 

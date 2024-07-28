@@ -124,13 +124,13 @@ async def get_chat_response(prompt, information):
 
 
 async def create_payment_link(user):
-    payment_data = await payment(amount=1000)
+    payment_data = await payment(amount=50)
     url = payment_data.confirmation.confirmation_url
 
     await Order(
         user=user.id,
         identy=payment_data.id,
-        amount=1000
+        amount=50
     ).insert()
 
     return url

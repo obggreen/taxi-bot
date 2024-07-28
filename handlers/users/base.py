@@ -10,7 +10,7 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.filters.chat_member_updated import ChatMemberUpdatedFilter, MEMBER, KICKED
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, ChatMemberUpdated, BufferedInputFile
+from aiogram.types import Message, CallbackQuery, ChatMemberUpdated, BufferedInputFile, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from docx import Document as DocxDocument
 
@@ -18,7 +18,7 @@ from database import Tariff
 from database.models import User
 from database.models.users import DocumentType, VerifType
 from handlers.routers import user_router
-from helpers.functions import make_tellcode_call
+from helpers.functions import make_tellcode_call, create_payment_link
 from helpers.keyboards.markups import default_markup, custom_back_markup
 
 
@@ -37,6 +37,20 @@ class PhoneState(StatesGroup):
     waiting_for_sms = State()
 
 
+# @user_router.message(Command(commands='start'))
+# async def ykassa(message: Message, user: User):
+#     url = await create_payment_link(user)
+#     markup = InlineKeyboardBuilder()
+#     markup.button(
+#         text='Оплатить 1000 ₽', web_app=WebAppInfo(url=url)
+#     )
+#
+#     await message.answer(
+#         'Работа для водителей такси, междугородние поездки по всей России.',
+#         reply_markup=markup.as_markup()
+#     )
+
+
 @user_router.callback_query(F.data == 'start')
 @user_router.message(Command(commands='start'))
 async def start_command(event: Union[Message, CallbackQuery], state: FSMContext, user: User, bot: Bot):
@@ -47,24 +61,6 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
     else:
         await event.message.delete()
         answer = event.message.answer
-
-    # duplicates, sts_duplicates = await find_duplicate_numbers()
-    # duplicate_message = await format_duplicate_message(duplicates, sts_duplicates)
-    #
-    # if duplicate_message:
-    #     file = FSInputFile('files/wairning.jpg')
-    #
-    #     await bot.send_photo(
-    #         photo=file,
-    #         chat_id=-1002210540953,
-    #         message_thread_id=4
-    #     )
-    #
-    #     await bot.send_message(
-    #         text=duplicate_message,
-    #         chat_id=-1002210540953,
-    #         message_thread_id=4
-    #     )
 
     if user:
         if user.number is None:
@@ -120,20 +116,6 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
                     'личности, Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.</>',
                     reply_markup=markup.adjust(1).as_markup()
                 )
-
-                # if not user.geo_message_id:
-                #     key = InlineKeyboardBuilder()
-                #
-                #     key.button(
-                #         text='📍Поделиться геопозицией',
-                #         callback_data='call_geoposition'
-                #     )
-                #
-                #     await answer(
-                #         'Для повышение приоритета выдачи заказов, вы можете поделиться своим местоположение, что бы операторы '
-                #         'видели вас около заказа и могли вам выдать ближайший!',
-                #         reply_markup=key.as_markup()
-                #     )
 
 
     else:
@@ -241,69 +223,6 @@ async def select_user_phone(message: Message, state: FSMContext, user: User, bot
         )
         await state.update_data(msg=msg.message_id)
         return
-
-
-
-# def add_image_if_base64(doc, title, base64_str):
-#     if base64_str:
-#         try:
-#             image_data = base64.b64decode(base64_str)
-#             image_stream = io.BytesIO(image_data)
-#             doc.add_heading(title, level=2)
-#             doc.add_picture(image_stream)
-#         except Exception as e:
-#             pass
-#
-#
-# def generate_user_report_in_memory(user: User):
-#     doc = DocxDocument()
-#
-#     doc.add_heading(f'Досье на пользователя {user.full_name}', 0)
-#
-#     doc.add_heading('Основная информация', level=1)
-#     doc.add_paragraph(f'Полное имя: {user.full_name}')
-#     doc.add_paragraph(f'Имя пользователя: {user.username}')
-#     doc.add_paragraph(f'Роль: {user.role}')
-#     doc.add_paragraph(f'Дата регистрации: {user.registration_date.strftime("%Y-%m-%d %H:%M:%S")}')
-#     doc.add_paragraph(
-#         f'Последняя активность: {user.last_active.strftime("%Y-%m-%d %H:%M:%S") if user.last_active else "N/A"}')
-#
-#     doc.add_heading('Верификация', level=1)
-#     doc.add_paragraph(f'Верификация на автомобиль: {"Да" if user.verification.verification_auto else "Нет"}')
-#     doc.add_paragraph(f'Верификация на документы: {"Да" if user.verification.verification_user else "Нет"}')
-#
-#     doc.add_heading('Настройки', level=1)
-#     doc.add_paragraph(f'Язык: {user.settings.language}')
-#
-#     doc.add_heading('Финансовая информация', level=1)
-#     doc.add_paragraph(f'Баланс: {user.balance} руб.')
-#     doc.add_paragraph(f'Подписка: {user.subscription if user.subscription else "Нет"}')
-#
-#     doc.add_heading('Информация об автомобиле', level=1)
-#     doc.add_paragraph(f'Номера автомобиля: {user.photo_auto_documents.auto_number}')
-#     add_image_if_base64(doc, 'Перед автомобиля', user.photo_auto_documents.auto_front)
-#     add_image_if_base64(doc, 'Левая сторона автомобиля', user.photo_auto_documents.auto_left)
-#     add_image_if_base64(doc, 'Правая сторона автомобиля', user.photo_auto_documents.auto_right)
-#     add_image_if_base64(doc, 'Зад автомобиля', user.photo_auto_documents.auto_back)
-#     add_image_if_base64(doc, 'Салон спереди', user.photo_auto_documents.salon_front)
-#     add_image_if_base64(doc, 'Зад салона', user.photo_auto_documents.salon_back)
-#
-#     byte_stream = io.BytesIO()
-#     doc.save(byte_stream)
-#     byte_stream.seek(0)
-#
-#     return byte_stream
-
-
-# @user_router.message(Command(commands='test'))
-# async def test(message: Message, user: User):
-#     byte_stream = generate_user_report_in_memory(user)
-#
-#     # Создание BufferedInputFile для отправки файла
-#     document = BufferedInputFile(byte_stream.read(), filename=f'user_report_{user.user_id}.docx')
-#
-#     # Отправка документа пользователю
-#     await message.answer_document(document)
 
 
 async def reverse_geocode(latitude, longitude):
