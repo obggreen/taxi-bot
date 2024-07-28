@@ -15,7 +15,7 @@ image_path = "files/img_1.png"
 
 base64_image = encode_image(image_path)
 
-api_key = 'sk-proj-oj9ebJMjRtPLhoLHPIxlT3BlbkFJsHJfr7ZEhVsf4t3AXUAm'
+api_key = 'sk-proj-E9GMa0LaLOYmVNx6m9NwT3BlbkFJKPglpvD8aUgmlj2GKGy3'
 
 check_auto_number = (
     'Твоя задача найти на автомобиле регистрационный знак, если его хорошо видно и ты четко'

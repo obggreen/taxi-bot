@@ -343,16 +343,16 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
         ]
 
         await bot.send_media_group(
-            chat_id=-1002210540953,
-            message_thread_id=231,
+            chat_id=-1002233300548,
+            message_thread_id=4,
             media=media_group
         )
         await bot.send_message(
             text=f'Username: <b>@{user.username}</>\n'
                  f'Номер телефона: {user.number}\n'
                  f'Номера автомобиля: {user.photo_auto_documents.auto_number}',
-            chat_id=-1002210540953,
-            message_thread_id=231,
+            chat_id=-1002233300548,
+            message_thread_id=4,
             reply_markup=markup.adjust(1).as_markup()
         )
         user.active_auto = VerifType.waiting
@@ -389,7 +389,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
         )
 
         await bot.edit_message_reply_markup(
-            chat_id=-1002210540953,
+            chat_id=-1002233300548,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )
@@ -420,7 +420,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
             text='✅', callback_data='pass'
         )
         await bot.edit_message_reply_markup(
-            chat_id=-1002210540953,
+            chat_id=-1002233300548,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )
