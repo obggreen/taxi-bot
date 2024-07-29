@@ -68,7 +68,7 @@ async def check_invoices_status(bot: Bot):
                     message_thread_id=6,
                     text=
                     '<b>🎉 Новая оплата на вступление</>\n'
-                    f'Оплатил пользователь: {user.username}\n'
+                    f'Оплатил пользователь: @{user.username}\n'
                     f'UserID: {user.user_id}\n'
                 )
 
