@@ -1,6 +1,7 @@
 import base64
 
 import requests
+from aiogram.client.session import aiohttp
 from openai import OpenAI
 
 # client = OpenAI(api_key="sk-proj-oj9ebJMjRtPLhoLHPIxlT3BlbkFJsHJfr7ZEhVsf4t3AXUAm")
@@ -78,12 +79,11 @@ async def get_response_gpt(base: str, content: str):
         "max_tokens": 1000
     }
 
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-    data = response.json()
-    print(data)
+    async with aiohttp.ClientSession() as session:
+        async with session.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload) as response:
+            data = await response.json()
+            print(data)
 
-    content = data['choices'][0]['message']['content']
-
-
+            content = data['choices'][0]['message']['content']
 
     return content
