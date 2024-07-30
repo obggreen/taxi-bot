@@ -87,7 +87,7 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
                         )
 
                     await answer(
-                        'Выберите желаемый для вас тарифный план:  ⤵️',
+                        'Ваш профиль верифицирован, вы можете приобрести вход в группу:  ⤵️',
                         reply_markup=markup.adjust(1).as_markup()
                     )
             else:
@@ -96,7 +96,6 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
                     '<b>RuWays - Работа, для водителей такси, о которой можно было только мечтать 🤭</>',
                     reply_markup=default_markup()
                 )
-
                 if not user.verification.verification_user:
                     if user.active_doc == VerifType.no:
                         markup.button(
