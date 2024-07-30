@@ -10,7 +10,7 @@ def default_markup():
         KeyboardButton(text='📊 Подписка'),
     )
     markup.row(
-        KeyboardButton(text='📨 Обратная связь')
+        KeyboardButton(text='📨 Тех-поддержка')
     )
 
     return markup.as_markup(resize_keyboard=True)

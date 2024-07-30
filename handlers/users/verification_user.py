@@ -185,7 +185,8 @@ async def select_bask_photo(message: Message, state: FSMContext, bot: Bot):
 
         if gpt_check == '0':
             msg = await message.answer(
-                'Не смогли разобрать номера на вашем автомобиле, пришлите фотографию в лучшем качестве.'
+                'Не смогли разобрать номер и серию на Ваших документах, пришлите фотографию в лучшем качестве.',
+                reply_markup=custom_back_markup('start')
             )
             await state.update_data(msg=msg.message_id)
             return
