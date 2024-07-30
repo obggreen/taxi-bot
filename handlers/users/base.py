@@ -93,7 +93,7 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
             else:
 
                 await answer(
-                    'Рады вас приветствовать в <b>Свободные Заказы | Межгород!</>',
+                    'RuWays - Работа, для водителей такси, о которой можно было только мечтать 🤭</>',
                     reply_markup=default_markup()
                 )
 
@@ -104,12 +104,13 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
                             callback_data=SelectVerificationType(action='open', verif='document')
                         )
 
-                if not user.verification.verification_auto:
-                    if user.active_auto == VerifType.no:
-                        markup.button(
-                            text='📃 Верификация автомобиля',
-                            callback_data=SelectVerificationType(action='open', verif='auto')
-                        )
+                if user.verification.verification_user:
+                    if not user.verification.verification_auto:
+                        if user.active_auto == VerifType.no:
+                            markup.button(
+                                text='📃 Верификация автомобиля',
+                                callback_data=SelectVerificationType(action='open', verif='auto')
+                            )
 
                 await answer(
                     '<i>Для получения заказов необходимо пройти проверку Вашей '
@@ -140,7 +141,7 @@ async def select_user_phone(message: Message, state: FSMContext, user: User, bot
             call_user = await make_tellcode_call(contact.phone_number)
             if call_user:
                 msg = await message.answer(
-                    'Сейчас Вам позвонит робот и продиктуют 4-х значный код, введите его в ответ на это сообщение:',
+                    'Сейчас Вам позвонит робот и продиктуют 4-х значный код, введите его в ответ на это сообщение.',
                     reply_markup=custom_back_markup('start')
                 )
                 await state.set_state(PhoneState.waiting_for_sms)
@@ -197,12 +198,13 @@ async def select_user_phone(message: Message, state: FSMContext, user: User, bot
                     callback_data=SelectVerificationType(action='open', verif='document')
                 )
 
-        if not user.verification.verification_auto:
-            if user.active_auto == VerifType.no:
-                markup.button(
-                    text='📃 Верификация автомобиля',
-                    callback_data=SelectVerificationType(action='open', verif='auto')
-                )
+        if user.verification.verification_user:
+            if not user.verification.verification_auto:
+                if user.active_auto == VerifType.no:
+                    markup.button(
+                        text='📃 Верификация автомобиля',
+                        callback_data=SelectVerificationType(action='open', verif='auto')
+                    )
 
         await message.answer(
             'Для получения доступа к сервису RuWays I Driver необходимо пройти проверку Вашей личности, '
