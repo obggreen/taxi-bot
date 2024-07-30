@@ -425,7 +425,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
         )
 
         markup.button(
-            text='Узнать почему', url='t.me/greenbot'
+            text='Узнать почему', url='t.me/transfermezhgorod'
         )
         await bot.send_message(
             chat_id=user.user_id,
