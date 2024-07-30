@@ -77,7 +77,7 @@ async def get_response_gpt(base: str, content: str):
                 ]
             }
         ],
-        "max_tokens": 1000
+        "max_tokens": 5000
     }
 
     async with aiohttp.ClientSession() as session:
