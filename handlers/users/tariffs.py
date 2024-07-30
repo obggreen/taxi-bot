@@ -44,12 +44,13 @@ async def check_tariff_plan(event: Union[Message, CallbackQuery], state: FSMCont
                 callback_data=SelectVerificationType(action='open', verif='document')
             )
 
-    if not user.verification.verification_auto:
-        if user.active_auto == VerifType.no:
-            markup.button(
-                text='📃 Верификация автомобиля',
-                callback_data=SelectVerificationType(action='open', verif='auto')
-            )
+    if user.verification.verification_user:
+        if not user.verification.verification_auto:
+            if user.active_auto == VerifType.no:
+                markup.button(
+                    text='📃 Верификация автомобиля',
+                    callback_data=SelectVerificationType(action='open', verif='auto')
+                )
 
     if user.active_doc == VerifType.no:
         await answer(
@@ -113,12 +114,12 @@ async def select_tariff(call: CallbackQuery, user: User):
 
     markup.row(custom_back_button('start'))
 
-    await call.message.edit_text(
-        f'<b>Выбранный тариф:</> {tariff.name}\n\n'
-        f'<b>Цена:</> {tariff.price}₽\n'
-        f'<b>Продолжительность:</> {tariff.count_days} дней\n\n'
-        f'Вы получите доступ к чату: ...',
-        reply_markup=markup.adjust(1).as_markup()
-    )
+    # await call.message.edit_text(
+    #     f'<b>Выбранный тариф:</> {tariff.name}\n\n'
+    #     f'<b>Цена:</> {tariff.price}₽\n'
+    #     f'<b>Продолжительность:</> {tariff.count_days} дней\n\n'
+    #     f'Вы получите доступ к чату: ...',
+    #     reply_markup=markup.adjust(1).as_markup()
+    # )
 
 
