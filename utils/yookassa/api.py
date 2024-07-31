@@ -19,7 +19,7 @@ async def payment(amount, name, phone):
             "return_url": "@RuWaysBot"
         },
         "capture": True,
-        "description": "Покупка доступа в боте",
+        "description": "Предоставление информационных услуг",
         "receipt": {
             "customer": {
                 "full_name": name,
