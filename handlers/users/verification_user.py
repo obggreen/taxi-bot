@@ -315,17 +315,20 @@ async def select_sl_photo(message: Message, state: FSMContext, bot: Bot, user: U
             InputMediaPhoto(media=photo_5),
         ]
 
-        sts_data = json.loads(user.photo_user_documents.sts_number)
+        try:
+            sts_data = json.loads(user.photo_user_documents.sts_number)
 
-        sts_info = (
-            f"Марка: {sts_data.get('марка', '0')}\n"
-            f"Модель: {sts_data.get('модель', '0')}\n"
-            f"Цвет: {sts_data.get('цвет', '0')}\n"
-            f"Гос номер: {sts_data.get('гос_номер', '0')}\n"
-            f"Год выпуска: {sts_data.get('год_выпуска', '0')}\n"
-            f"Серия: {sts_data.get('Серия', '0')}\n"
-            f"Номер: {sts_data.get('Номер', '0')}"
-        )
+            sts_info = (
+                f"Марка: {sts_data.get('марка', '0')}\n"
+                f"Модель: {sts_data.get('модель', '0')}\n"
+                f"Цвет: {sts_data.get('цвет', '0')}\n"
+                f"Гос номер: {sts_data.get('гос_номер', '0')}\n"
+                f"Год выпуска: {sts_data.get('год_выпуска', '0')}\n"
+                f"Серия: {sts_data.get('Серия', '0')}\n"
+                f"Номер: {sts_data.get('Номер', '0')}"
+            )
+        except:
+            sts_info = user.photo_user_documents.sts_number
 
         await bot.send_media_group(
             chat_id=-1002233300548,
