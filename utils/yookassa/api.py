@@ -8,18 +8,36 @@ Configuration.account_id = 424513
 Configuration.secret_key = 'live_c1rXcAjX_T39V4lFkGAx13sfu_63x3UBkYj1BrQ12JM'
 
 
-async def payment(amount):
+async def payment(amount, name, phone):
     payment = await Payment.create({
         "amount": {
-            "value": amount,
+            "value": str(amount),
             "currency": "RUB"
         },
         "confirmation": {
             "type": "redirect",
-            "return_url": "https://t.me/dfsdafsdfsdfdsfsdf_bot"
+            "return_url": "@RuWaysBot"
         },
         "capture": True,
-        "description": f"Покупка тестового тарифа"
+        "description": "Покупка доступа в боте",
+        "receipt": {
+            "customer": {
+                "full_name": name,
+                "email": "maybeline.aa@gmail.com",
+                "phone": phone
+            },
+            "items": [
+                {
+                    "description": "Доступ в боте",
+                    "quantity": "1.00",
+                    "amount": {
+                        "value": str(amount),
+                        "currency": "RUB"
+                    },
+                    "vat_code": "3"  # Код ставки НДС, 1 - НДС 18%, 2 - НДС 10%, 3 - НДС 0%, 4 - без НДС и т.д.
+                }
+            ]
+        }
     }, uuid.uuid4())
 
     print(payment)
