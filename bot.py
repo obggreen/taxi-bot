@@ -43,7 +43,7 @@ async def check_invoices_status(bot: Bot):
         )
         if result == 'succeeded':
             link = await bot.create_chat_invite_link(
-                chat_id=-4218647142,
+                chat_id=-1002180232598,
                 name=user.username
             )
             markup = InlineKeyboardBuilder()
