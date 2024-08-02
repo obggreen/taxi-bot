@@ -10,6 +10,11 @@ def default_markup():
         KeyboardButton(text='📊 Подписка'),
     )
     markup.row(
+        KeyboardButton(
+            text='💳 Приобрести доступ'
+        )
+    )
+    markup.row(
         KeyboardButton(text='📨 Тех-поддержка')
     )
 

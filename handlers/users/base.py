@@ -12,6 +12,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery, ChatMemberUpdated, BufferedInputFile, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+from babel.numbers import format_currency
 from docx import Document as DocxDocument
 
 from database import Tariff
@@ -279,6 +280,53 @@ async def tests(message: Message, state: FSMContext, user: User):
 
     else:
         await message.reply('Пожалуйста, отправьте свою **живую** геопозицию, а не выбранное место.')
+
+
+
+@user_router.message(F.text == '💳 Приобрести доступ')
+async def select_dostup_monet(message: Message, user: User):
+
+    if user.verification.verification_user or user.verification.verification_auto:
+        markup = InlineKeyboardBuilder()
+        url = await create_payment_link(user)
+
+        markup.button(
+            text='Оплатить 1000 ₽', web_app=WebAppInfo(url=url)
+        )
+
+        await message.answer(
+            f'У вас успешно пройдена верификация, оплатите {format_currency(1000, "RUB")}',
+            reply_markup=markup.adjust(1).as_markup()
+        )
+    elif user.active_doc == VerifType.waiting or user.active_auto == VerifType.waiting:
+        await message.answer(
+            'Ваши заявки на модерации, подождите их одобрения',
+            reply_markup=custom_back_markup('start')
+        )
+    else:
+        markup = InlineKeyboardBuilder()
+
+        if not user.verification.verification_user:
+            if user.active_doc == VerifType.no:
+                markup.button(
+                    text='📃 Верификация документов',
+                    callback_data=SelectVerificationType(action='open', verif='document')
+                )
+
+        if user.verification.verification_user:
+            if not user.verification.verification_auto:
+                if user.active_auto == VerifType.no:
+                    markup.button(
+                        text='📃 Верификация автомобиля',
+                        callback_data=SelectVerificationType(action='open', verif='auto')
+                    )
+
+
+        await message.answer(
+            'Для входа в группу вам нужно пройти верификацию',
+            reply_markup=markup.adjust(1).as_markup()
+        )
+
 
 
 # async def check_location(bot: Bot):
