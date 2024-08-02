@@ -130,7 +130,7 @@ async def create_payment_link(user):
     await Order(
         user=user.id,
         identy=payment_data.id,
-        amount=10
+        amount=1000
     ).insert()
 
     return url
