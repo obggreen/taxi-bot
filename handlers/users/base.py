@@ -169,6 +169,7 @@ async def select_user_phone(message: Message, state: FSMContext, user: User, bot
         await state.update_data(msg=msg.message_id)
         return
 
+
 @user_router.message(PhoneState.waiting_for_sms)
 async def select_user_phone(message: Message, state: FSMContext, user: User, bot: Bot):
     data = await state.get_data()
@@ -295,7 +296,8 @@ async def select_dostup_monet(message: Message, user: User):
         )
 
         await message.answer(
-            f'У вас успешно пройдена верификация, оплатите {format_currency(1000, "RUB")}',
+            f'У вас успешно пройдена верификация, оплатите {format_currency(1000, "RUB")}\n\n'
+            f'Если у вас не проходит оплата по кнопке, оплатите по ссылке: {url}',
             reply_markup=markup.adjust(1).as_markup()
         )
     elif user.active_doc == VerifType.waiting or user.active_auto == VerifType.waiting:
@@ -315,7 +317,6 @@ async def select_dostup_monet(message: Message, user: User):
 
         if user.verification.verification_user:
             if not user.verification.verification_auto:
-                if user.active_auto == VerifType.no:
                     markup.button(
                         text='📃 Верификация автомобиля',
                         callback_data=SelectVerificationType(action='open', verif='auto')

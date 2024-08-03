@@ -401,7 +401,9 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
         await bot.send_message(
             chat_id=user.user_id,
             text='Ваши документы успешно прошли проверку!\n'
-                 'Стоимость подключения к группе: 1000 рублей.',
+                 'Стоимость подключения к группе: 1000 рублей.\n\n'
+                 'Если у вас не проходит оплата по кнопке, используется ссылку ⬇️\n'
+                 f'{url}',
             reply_markup=markup.adjust(1).as_markup()
         )
         # await bot.send_message(
