@@ -77,46 +77,47 @@ async def start_command(event: Union[Message, CallbackQuery], state: FSMContext,
 
             await state.set_state(PhoneState.waiting_for_phone)
         else:
-            tariffs = await Tariff.all().to_list()
-            markup = InlineKeyboardBuilder()
+            if user.verification.verification_base:
+                markup = InlineKeyboardBuilder()
 
-            if user.verification.verification_auto and user.verification.verification_user:
-                if tariffs:
-                    for tariff in tariffs:
-                        markup.button(
-                            text=tariff.name, callback_data=SelectTariff(action='open', identity=tariff.identity)
-                        )
+                url = await create_payment_link(user)
 
-                    await answer(
-                        'Ваш профиль верифицирован, вы можете приобрести вход в группу:  ⤵️',
-                        reply_markup=markup.adjust(1).as_markup()
-                    )
+                markup.button(
+                    text='Оплатить 1000 ₽', web_app=WebAppInfo(url=url)
+                )
+
+                await answer(
+                    'Ваш профиль верифицирован, вы можете приобрести вход в группу:  ⤵️',
+                    reply_markup=markup.adjust(1).as_markup()
+                )
             else:
+                markup = InlineKeyboardBuilder()
 
                 await answer(
                     '<b>RuWays - Работа, для водителей такси, о которой можно было только мечтать 🤭</>',
                     reply_markup=default_markup()
                 )
-                if not user.verification.verification_user:
+
+                if not user.verification.verification_base:
                     if user.active_doc == VerifType.no:
                         markup.button(
-                            text='📃 Верификация документов',
-                            callback_data=SelectVerificationType(action='open', verif='document')
+                            text='📃 Пройти верификацию',
+                            callback_data='base_verification'
                         )
 
-                if user.verification.verification_user:
-                    if not user.verification.verification_auto:
-                        if user.active_auto == VerifType.no:
-                            markup.button(
-                                text='📃 Верификация автомобиля',
-                                callback_data=SelectVerificationType(action='open', verif='auto')
-                            )
+                    await answer(
+                        'Для получения доступа к сервису RuWays I Driver необходимо пройти проверку Вашей личности, '
+                        'Вашего автомобиля, водительского удостоверения, технического паспорта. Для '
+                        'продолжения верификации следуйте дальнейшим подсказкам бота',
+                        reply_markup=markup.adjust(1).as_markup()
+                    )
 
-                await answer(
-                    '<i>Для получения заказов необходимо пройти проверку Вашей '
-                    'личности, Вашего автомобиля, водительского удостоверения, технического паспорта автомобиля.</>',
-                    reply_markup=markup.adjust(1).as_markup()
-                )
+                if user.active_doc == VerifType.waiting:
+                    await answer(
+                        'Ваши данные находятся на проверке, пожалуйста, ожидайте!',
+                        reply_markup=markup.adjust(1).as_markup()
+                    )
+
 
 
     else:
@@ -192,20 +193,12 @@ async def select_user_phone(message: Message, state: FSMContext, user: User, bot
             reply_markup=default_markup()
         )
 
-        if not user.verification.verification_user:
+        if not user.verification.verification_base:
             if user.active_doc == VerifType.no:
                 markup.button(
-                    text='📃 Верификация документов',
-                    callback_data=SelectVerificationType(action='open', verif='document')
+                    text='📃 Пройти верификацию',
+                    callback_data='base_verification'
                 )
-
-        if user.verification.verification_user:
-            if not user.verification.verification_auto:
-                if user.active_auto == VerifType.no:
-                    markup.button(
-                        text='📃 Верификация автомобиля',
-                        callback_data=SelectVerificationType(action='open', verif='auto')
-                    )
 
         await message.answer(
             'Для получения доступа к сервису RuWays I Driver необходимо пройти проверку Вашей личности, '
@@ -214,7 +207,7 @@ async def select_user_phone(message: Message, state: FSMContext, user: User, bot
             reply_markup=markup.adjust(1).as_markup()
         )
 
-        if user.verification.verification_auto:
+        if user.verification.verification_base:
             await message.answer(
                 'тут покупка'
             )

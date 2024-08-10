@@ -37,20 +37,12 @@ async def check_tariff_plan(event: Union[Message, CallbackQuery], state: FSMCont
 
     markup = InlineKeyboardBuilder()
 
-    if not user.verification.verification_user:
+    if not user.verification.verification_base:
         if user.active_doc == VerifType.no:
             markup.button(
-                text='📃 Верификация документов',
-                callback_data=SelectVerificationType(action='open', verif='document')
+                text='📃 Пройти верификацию',
+                callback_data='base_verification'
             )
-
-    if user.verification.verification_user:
-        if not user.verification.verification_auto:
-            if user.active_auto == VerifType.no:
-                markup.button(
-                    text='📃 Верификация автомобиля',
-                    callback_data=SelectVerificationType(action='open', verif='auto')
-                )
 
     if user.active_doc == VerifType.no:
         await answer(
