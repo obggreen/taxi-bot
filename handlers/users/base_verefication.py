@@ -493,8 +493,8 @@ async def select_back_photo(message: Message, state: FSMContext, bot: Bot, user:
         ]
 
         await bot.send_media_group(
-            chat_id=-1002236174502,
-            message_thread_id=2,
+            chat_id=-1002233300548,
+            message_thread_id=4,
             media=media_group
         )
         await bot.send_message(
@@ -502,8 +502,8 @@ async def select_back_photo(message: Message, state: FSMContext, bot: Bot, user:
                  f'Номер телефона: {user.number}\n'
                  f'ФИО: <b>{user.fio}</>\n'
                  f'<b>Данные СТС</>:\n{sts_info}',
-            chat_id=-1002236174502,
-            message_thread_id=2,
+            chat_id=-1002233300548,
+            message_thread_id=4,
             reply_markup=markup.adjust(1).as_markup()
         )
 
@@ -541,7 +541,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
         )
 
         await bot.edit_message_reply_markup(
-            chat_id=-1002236174502,
+            chat_id=-1002233300548,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )
@@ -568,7 +568,7 @@ async def chat_callback(call: CallbackQuery, callback_data: VerificarionAuto, bo
             text='✅', callback_data='pass'
         )
         await bot.edit_message_reply_markup(
-            chat_id=-1002236174502,
+            chat_id=-1002233300548,
             message_id=call.message.message_id,
             reply_markup=kb.as_markup()
         )
