@@ -26,6 +26,21 @@ class VerifType:
 class UserVerification(BaseModel):
     verification_auto: Optional[bool] = Field(default=False)
     verification_user: Optional[bool] = Field(default=False)
+    verification_base: Optional[bool] = Field(default=False)
+
+
+class BaseVerification(BaseModel):
+    photo_rights: Optional[str] = None
+    facial_sts: Optional[str] = None
+    rear_sts: Optional[str] = None
+    rights_face: Optional[str] = None
+    auto_front: Optional[str] = None
+    auto_left: Optional[str] = None
+    auto_right: Optional[str] = None
+    auto_back: Optional[str] = None
+    auto_number: Optional[str] = None
+    sts_number: Optional[str] = None
+
 
 
 class UserDocument(BaseModel):
@@ -36,6 +51,7 @@ class UserDocument(BaseModel):
     salon_front: Optional[str] = None
     salon_back: Optional[str] = None
     auto_number: Optional[str] = None
+
 
 
 class UserPhotoMe(BaseModel):
@@ -72,11 +88,12 @@ class User(Document):
     documents: str = DocumentType.untested
     photo_auto_documents: UserDocument = UserDocument()
     photo_user_documents: UserPhotoMe = UserPhotoMe()
+    base_verification: BaseVerification = BaseVerification()
     verification: UserVerification = UserVerification()
     active_auto: str = VerifType.no
     active_doc: str = VerifType.no
     number: Optional[int] = None
-    geo_message_id : Optional[int] = None
+    geo_message_id: Optional[int] = None
 
     subscription: Optional[BeanieObjectId] = None
 

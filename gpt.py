@@ -16,7 +16,7 @@ image_path = "files/img_1.png"
 
 base64_image = encode_image(image_path)
 
-api_key = 'sk-proj-E9GMa0LaLOYmVNx6m9NwT3BlbkFJKPglpvD8aUgmlj2GKGy3'
+api_key = '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'
 
 check_auto_number = (
     'Твоя задача найти на автомобиле регистрационный знак, если его хорошо видно и ты четко'
@@ -77,7 +77,7 @@ async def get_response_gpt(base: str, content: str):
                 ]
             }
         ],
-        "max_tokens": 5000
+        "max_tokens": 4096
     }
 
     async with aiohttp.ClientSession() as session:
@@ -86,5 +86,6 @@ async def get_response_gpt(base: str, content: str):
             print(data)
 
             content = data['choices'][0]['message']['content']
+            print(content)
 
     return content
